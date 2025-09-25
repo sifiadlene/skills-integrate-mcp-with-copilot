@@ -100,9 +100,28 @@ section h3 {
   justify-content: space-between;
 }
 
-/* Remove the bullet point pseudo-element */
 .participants-section ul li::before {
   display: none;
+}
+
+#filters-toolbar {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+#filters-toolbar label {
+  font-weight: bold;
+  margin-right: 4px;
+}
+#filters-toolbar select,
+#filters-toolbar input[type="text"] {
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 15px;
+  margin-right: 10px;
 }
 
 .participant-email {

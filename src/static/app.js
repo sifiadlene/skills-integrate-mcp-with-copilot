@@ -3,6 +3,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const activitySelect = document.getElementById("activity");
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
+  const categoryFilter = document.getElementById("category-filter");
+  const nameFilter = document.getElementById("name-filter");
+  const searchFilter = document.getElementById("search-filter");
 
   // Function to fetch activities from API
   async function fetchActivities() {
@@ -12,49 +15,83 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Clear loading message
       activitiesList.innerHTML = "";
-
-      // Populate activities list
+      activitySelect.innerHTML = "";
+      nameFilter.innerHTML = '<option value="">All</option>';
+      // Collect categories from activity names
+      const categories = new Set();
       Object.entries(activities).forEach(([name, details]) => {
-        const activityCard = document.createElement("div");
-        activityCard.className = "activity-card";
-
-        const spotsLeft =
-          details.max_participants - details.participants.length;
-
-        // Create participants HTML with delete icons instead of bullet points
-        const participantsHTML =
-          details.participants.length > 0
-            ? `<div class="participants-section">
-              <h5>Participants:</h5>
-              <ul class="participants-list">
-                ${details.participants
-                  .map(
-                    (email) =>
-                      `<li><span class="participant-email">${email}</span><button class="delete-btn" data-activity="${name}" data-email="${email}">❌</button></li>`
-                  )
-                  .join("")}
-              </ul>
-            </div>`
-            : `<p><em>No participants yet</em></p>`;
-
-        activityCard.innerHTML = `
-          <h4>${name}</h4>
-          <p>${details.description}</p>
-          <p><strong>Schedule:</strong> ${details.schedule}</p>
-          <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
-          <div class="participants-container">
-            ${participantsHTML}
-          </div>
-        `;
-
-        activitiesList.appendChild(activityCard);
-
-        // Add option to select dropdown
+        // Guess category from name (first word or custom logic)
+        let cat = name.split(" ")[0];
+        categories.add(cat);
+      });
+      categoryFilter.innerHTML = '<option value="">All</option>' + Array.from(categories).map(cat => `<option value="${cat}">${cat}</option>`).join("");
+      // Populate name filter
+      Object.keys(activities).forEach(name => {
+        const option = document.createElement("option");
+        option.value = name;
+        option.textContent = name;
+        nameFilter.appendChild(option);
+      });
+      // Populate activity select for signup
+      Object.keys(activities).forEach(name => {
         const option = document.createElement("option");
         option.value = name;
         option.textContent = name;
         activitySelect.appendChild(option);
       });
+      // Filtering logic
+      function filterActivities() {
+        activitiesList.innerHTML = "";
+        const selectedCategory = categoryFilter.value;
+        const selectedName = nameFilter.value;
+        const searchText = searchFilter.value.toLowerCase();
+        Object.entries(activities).forEach(([name, details]) => {
+          let cat = name.split(" ")[0];
+          if (
+            (selectedCategory === "" || cat === selectedCategory) &&
+            (selectedName === "" || name === selectedName) &&
+            (searchText === "" || name.toLowerCase().includes(searchText) || details.description.toLowerCase().includes(searchText))
+          ) {
+            const activityCard = document.createElement("div");
+            activityCard.className = "activity-card";
+            const spotsLeft = details.max_participants - details.participants.length;
+            const participantsHTML =
+              details.participants.length > 0
+                ? `<div class="participants-section">
+                  <h5>Participants:</h5>
+                  <ul class="participants-list">
+                    ${details.participants
+                      .map(
+                        (email) =>
+                          `<li><span class="participant-email">${email}</span><button class="delete-btn" data-activity="${name}" data-email="${email}">❌</button></li>`
+                      )
+                      .join("")}
+                  </ul>
+                </div>`
+                : `<p><em>No participants yet</em></p>`;
+            activityCard.innerHTML = `
+              <h4>${name}</h4>
+              <p>${details.description}</p>
+              <p><strong>Schedule:</strong> ${details.schedule}</p>
+              <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
+              <div class="participants-container">
+                ${participantsHTML}
+              </div>
+            `;
+            activitiesList.appendChild(activityCard);
+          }
+        });
+        // Add event listeners to delete buttons
+        document.querySelectorAll(".delete-btn").forEach((button) => {
+          button.addEventListener("click", handleUnregister);
+        });
+      }
+      // Initial render
+      filterActivities();
+      // Add filter event listeners
+      categoryFilter.addEventListener("change", filterActivities);
+      nameFilter.addEventListener("change", filterActivities);
+      searchFilter.addEventListener("input", filterActivities);
 
       // Add event listeners to delete buttons
       document.querySelectorAll(".delete-btn").forEach((button) => {
